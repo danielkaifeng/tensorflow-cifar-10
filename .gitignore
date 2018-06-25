@@ -1,0 +1,5 @@
+data_batch_*
+batch*
+*log
+test_batch
+*pyc
