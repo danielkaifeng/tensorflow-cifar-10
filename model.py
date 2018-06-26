@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import math
 
 def batch_norm(x, phase_train, scope):
 	n_out = x.get_shape().as_list()[-1]
@@ -65,11 +66,12 @@ class build_network():
 											name="conv2d_b_%d" % i)
 
 				conv3 = tf.layers.conv2d(inputs=net, filters=filters[i], 
-											kernel_size=(3,3), padding="same", strides=1, 
+											kernel_size=(1,1), padding="same", strides=1, 
 											activation=tf.nn.relu, kernel_initializer= tf.truncated_normal_initializer(stddev=std, dtype=tf.float32),
 											name="conv2d_c_%d" % i)
 
 				conv = tf.concat(axis=3, values=[conv1, conv2, conv3])
+				#conv = conv1 + conv2 + conv3
 
 				#conv = tf.layers.conv2d(inputs=conv, filters=filters[i], 
 				#							kernel_size=kernel_size[i], padding="same", dilation_rate=4, 
@@ -78,24 +80,32 @@ class build_network():
 				conv = batch_norm(conv, is_train, scope='bn_2d_%d' % i)
 				conv = tf.layers.dropout(inputs=conv, rate= dropout)
 
-				conv += tf.layers.dense(net, 3*filters[i])
-
+				#conv += tf.layers.dense(net, 3*filters[i])
+				#conv += tf.layers.conv2d(net, filters=3*filters[i], kernel_size=(1,1), padding="same")
 				if i % 3 == 1:
+					conv += net
+
+				if i % 4 == 1 and i <=12:
 					#net = tf.layers.max_pooling2d(inputs=conv, pool_size=(2,2), strides=(2,2))
 					conv = tf.layers.max_pooling2d(inputs=conv, pool_size=(2,2), strides=(2,2))
 
 				return conv
 
 	def network(self, x, dropout, is_train, num_classes):
-		filters = [16, 16, 32, 32, 64, 64, 64, 128, 128, 128]
+		filters = [32, 32] + [64] * 32
+		#filters = [32] * 12
 		block_num = 10
 
-		net = x
+		#net = x
+		net = tf.map_fn(lambda im: tf.image.random_flip_left_right(im), x)
+		#net = tf.contrib.image.rotate(x, 15 * math.pi / 180)
+
 		for i in range(block_num):
 			net = self.conv_block(net, filters, dropout, is_train, i)
 
 		net = tf.reshape(net, [-1, filters[i]*4*4*3])
-		logits = tf.layers.dense(net, 64)
+		#net = tf.layers.dense(net, 32)
+		logits = tf.layers.dropout(inputs=net, rate= dropout)
 		logits = tf.layers.dense(logits, num_classes)
 
 		return logits

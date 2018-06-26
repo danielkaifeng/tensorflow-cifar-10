@@ -9,5 +9,6 @@ def unpickle(file):
 	return dict
 
 res = unpickle(argv[1])
-print res['data'].shape
+#print res['data'].shape
+print res['data'][0]
 

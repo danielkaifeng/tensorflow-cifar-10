@@ -13,7 +13,7 @@ dropout = 0.3
 num_classes = 10
 config_dict = {
 		"num_classes": num_classes,
-		"learning_rate": 0.001
+		"learning_rate": 0.0001
 }
 
 with tf.device("/gpu:1"):
@@ -40,8 +40,13 @@ def get_batch_data(filename):
 	res = unpickle(filename)
 
 	im = res['data']
+	u = np.mean(im)
+	var = np.var(im)
+	#im = im/255.
+
 	im = np.reshape(im, (10000, 3, 32, 32))
 	im = np.transpose(im, (0,2,3,1))
+
 
 	return im, np.array(res['labels'])
 
@@ -103,7 +108,7 @@ with tf.Session(config=config) as sess:
 		val_acc = sess.run(model.acc, feed_dict=feed)
 		print "Epoch %d/%d - loss: %f - acc: %f\tval_acc: %f" % (step+1, epochs, loss, acc, val_acc)
 		
-		if step % 100 == 1:	
+		if step % 100 == 20:	
 			checkpoint_filepath='log/step-%d.ckpt' % step
 			saver.save(sess,checkpoint_filepath)
 			print 'checkpoint saved!'
